@@ -7,6 +7,7 @@ from langchain.agents import AgentExecutor
 from langchain.agents.output_parsers import OpenAIFunctionsAgentOutputParser
 from langchain_core.messages import AIMessage, HumanMessage
 
+
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 
@@ -14,7 +15,7 @@ logging.basicConfig(level=logging.INFO)
 load_dotenv()
 
 # Define which LLM to use
-llm = ChatOpenAI(model="gpt-4-1106-preview", temperature=0)
+llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
 
 # Short term memory
 chat_history = []
