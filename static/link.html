@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head><title>Plaid Link</title></head>
+<body>
+<script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
+<script>
+  fetch("/create_link_token")
+    .then(res => res.json())
+    .then(data => {
+      const handler = Plaid.create({
+        token: data.link_token,
+        onSuccess: function(public_token, metadata) {
+          fetch("/exchange_public_token", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ public_token, user_id: "user-123" })
+          }).then(() => alert("Plaid linked!"));
+        },
+        onExit: function(err, metadata) {
+          console.error(err, metadata);
+        }
+      });
+      handler.open();
+    });
+</script>
+</body>
+</html>

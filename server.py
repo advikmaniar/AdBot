@@ -1,15 +1,20 @@
 from flask import Flask, request, jsonify, send_from_directory
 from plaidClient import client
-import os
 from transactionFetcher import fetchTransactions 
 from plaid2.model.link_token_create_request_user import LinkTokenCreateRequestUser
+from dotenv import load_dotenv
+import os
+import pandas as pd
+from datetime import datetime
 
+load_dotenv()
 
 app = Flask(__name__)
+user_dataframes = {}  
 
 @app.route("/")
 def index():
-    return send_from_directory('.', "index.html")
+    return send_from_directory('static', "link.html")
 
 @app.route("/create_link_token", methods=["GET"])
 def create_link_token():
@@ -25,13 +30,31 @@ def create_link_token():
 @app.route("/exchange_public_token", methods=["POST"])
 def exchange_token():
     public_token = request.json["public_token"]
+    user_id = request.json.get("user_id", "user-123")
+    
+    # Exchange token
     response = client.item_public_token_exchange(public_token)
     access_token = response.access_token
 
     print("🔁 Running transaction fetch after token exchange...")
-    fetchTransactions(access_token)  
 
-    # Update the .env file with the new access token
+    # Fetch transactions into a dataframe
+    df = fetchTransactions(access_token, user_id)
+
+    user_dataframes[user_id] = df
+    print(df.head())
+
+    # Save to CSV 
+    os.makedirs("data", exist_ok=True)
+    filename = f"data/transactions_{user_id}.csv"
+    df.to_csv(filename, index=False)
+    print(f"📁 Transactions saved to {filename}")
+
+    update_env_access_token(access_token)
+
+    return jsonify({"access_token": access_token})
+
+def update_env_access_token(access_token):
     lines = []
     if os.path.exists(".env"):
         with open(".env", "r") as f:
@@ -47,8 +70,6 @@ def exchange_token():
                 f.write(line)
         if not updated:
             f.write(f"PLAID_ACCESS_TOKEN={access_token}\n")
-
-    return jsonify({"access_token": response.access_token}) 
 
 if __name__ == "__main__":
     app.run(debug=True)
