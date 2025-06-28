@@ -1,27 +1,42 @@
 <!DOCTYPE html>
 <html>
-<head><title>Plaid Link</title></head>
-<body>
-<script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
-<script>
-  fetch("/create_link_token")
-    .then(res => res.json())
-    .then(data => {
-      const handler = Plaid.create({
-        token: data.link_token,
-        onSuccess: function(public_token, metadata) {
-          fetch("/exchange_public_token", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ public_token, user_id: "user-123" })
-          }).then(() => alert("Plaid linked!"));
-        },
-        onExit: function(err, metadata) {
-          console.error(err, metadata);
-        }
+<head>
+  <meta charset="UTF-8" />
+  <title>Connect Bank</title>
+  <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
+</head>
+<body style="margin:0; padding:0;">
+
+  <script>
+    fetch('/create_link_token')
+      .then(response => response.json())
+      .then(data => {
+        const handler = Plaid.create({
+          token: data.link_token,
+          onSuccess: function(public_token, metadata) {
+            fetch('/exchange_public_token', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                public_token: public_token,
+                user_id: new URLSearchParams(window.location.search).get("user_id") || "user-123"
+              })
+            })
+            .then(res => res.json())
+            .then(data => {
+              window.close(); // Close the tab or popup after success
+            });
+          },
+          onExit: function(err, metadata) {
+            console.warn("User exited Plaid Link:", err, metadata);
+            window.close(); // Optional: close on exit too
+          }
+        });
+
+        // Launch Plaid Link immediately
+        handler.open();
       });
-      handler.open();
-    });
-</script>
+  </script>
+
 </body>
 </html>

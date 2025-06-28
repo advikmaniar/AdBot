@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, make_response
 from plaidClient import client
 from transactionFetcher import fetchTransactions 
 from plaid2.model.link_token_create_request_user import LinkTokenCreateRequestUser
@@ -15,6 +15,34 @@ user_dataframes = {}
 @app.route("/")
 def index():
     return send_from_directory('static', "link.html")
+
+@app.route("/slack/commands", methods=["POST"])
+def slack_command():
+    data = request.form
+    user_id = data.get("user_id")
+    trigger_id = data.get("trigger_id")
+
+    # Generate the URL to Plaid Link
+    link_url = f"http://localhost:5000/?user_id={user_id}" 
+
+    slack_response = {
+        "response_type": "ephemeral",
+        "text": "Click below to connect your bank account securely with Plaid.",
+        "attachments": [
+            {
+                "text": "",
+                "fallback": "Connect your account",
+                "actions": [
+                    {
+                        "type": "button",
+                        "text": "🔗 Connect My Bank Account",
+                        "url": link_url
+                    }
+                ]
+            }
+        ]
+    }
+    return jsonify(slack_response)
 
 @app.route("/create_link_token", methods=["GET"])
 def create_link_token():
@@ -36,7 +64,7 @@ def exchange_token():
     response = client.item_public_token_exchange(public_token)
     access_token = response.access_token
 
-    print("🔁 Running transaction fetch after token exchange...")
+    print("🔁 Running transaction fetch after token exchange..., make_response")
 
     # Fetch transactions into a dataframe
     df = fetchTransactions(access_token, user_id)

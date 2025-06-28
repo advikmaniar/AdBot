@@ -22,6 +22,31 @@ app = App(
     signing_secret=os.environ.get("SLACK_SIGNING_SECRET")
 )
 
+@app.command("/connect-bank-account")
+def handle_connect_command(ack, body, respond):
+    ack()
+    user_id = body["user_id"]
+    link_url = f"http://localhost:5000/?user_id={user_id}"  # Replace with your actual domain or ngrok
+
+    respond({
+        "response_type": "ephemeral",
+        "text": "Click the button below to securely link your bank account.",
+        "attachments": [
+            {
+                "text": "",
+                "fallback": "Connect your account",
+                "actions": [
+                    {
+                        "type": "button",
+                        "text": "🔗 Connect My Bank Account",
+                        "url": link_url
+                    }
+                ]
+            }
+        ]
+    })
+
+
 def process_message(event, client):
     """Process the message and respond accordingly."""
     try:
@@ -60,7 +85,6 @@ def process_message(event, client):
                     client.chat_update(channel=channel_id, ts=ts, text=response)
                 return
 
-            
             # Process the user message using the agent
             agent_response_text = process_user_task(str(agent_input), chat_history)
             # Update the initial response with the real response from the AI
