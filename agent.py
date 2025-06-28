@@ -15,7 +15,7 @@ logging.basicConfig(level=logging.INFO)
 load_dotenv()
 
 # Define which LLM to use
-llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
+llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
 # Short term memory
 chat_history = []
