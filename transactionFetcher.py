@@ -11,7 +11,7 @@ def fetchTransactions(access_token,user_id):
     # Define the base URL and date range
     base_url = "https://sandbox.plaid.com"
     end_date = datetime.today().date()
-    start_date = end_date - timedelta(days=30)
+    start_date = end_date - timedelta(days=730)
 
     payload = {
         "client_id": os.getenv("PLAID_CLIENT_ID"),
@@ -24,6 +24,7 @@ def fetchTransactions(access_token,user_id):
     # Call Plaid directly
     response = requests.post(f"{base_url}/transactions/get", json=payload)
     data = response.json()
+    print("📨 Raw response data:", data)
     transactions = data.get("transactions", [])
     print(f"📊 Retrieved {len(transactions)} transactions:\n")
 

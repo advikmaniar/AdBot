@@ -5,7 +5,8 @@ from plaid2.model.link_token_create_request_user import LinkTokenCreateRequestUs
 from dotenv import load_dotenv
 import os
 import pandas as pd
-from datetime import datetime
+import time
+import requests
 
 load_dotenv()
 
@@ -64,6 +65,9 @@ def exchange_token():
     response = client.item_public_token_exchange(public_token)
     access_token = response.access_token
 
+    fire_sandbox_transactions_webhook(access_token)
+    time.sleep(3) # Webhook processing
+
     print("🔁 Running transaction fetch after token exchange..., make_response")
 
     # Fetch transactions into a dataframe
@@ -81,6 +85,19 @@ def exchange_token():
     update_env_access_token(access_token)
 
     return jsonify({"access_token": access_token})
+
+# Only for sandbox environment
+def fire_sandbox_transactions_webhook(access_token):
+    webhook_payload = {
+        "client_id": os.getenv("PLAID_CLIENT_ID"),
+        "secret": os.getenv("PLAID_SECRET"),
+        "access_token": access_token,
+        "webhook_type": "TRANSACTIONS",
+        "webhook_code": "DEFAULT_UPDATE"
+    }
+    response = requests.post("https://sandbox.plaid.com/sandbox/transactions/fire_webhook", json=webhook_payload)
+    print("📨 Webhook fired:", response.status_code, response.text)
+
 
 def update_env_access_token(access_token):
     lines = []
